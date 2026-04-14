@@ -11,7 +11,8 @@
 #define ADDR 0b100000 // 0x20
 
 #define IODIR 0x00 // input / output
-#define OLAT  0x0A // high / low
+#define OLAT  0x0A // output high / low
+#define GPIO 0x09 // input high / low
 
 // set_pin
 void setPin(unsigned char address, unsigned char reg, unsigned char value)  {
@@ -38,7 +39,7 @@ int main()
 {
 
     stdio_init_all();
-    sleep_ms(20000); // wait for serial monitor
+    // sleep_ms(20000); // wait for serial monitor
 
     // I2C Initialisation. Using it at 400Khz.
     i2c_init(I2C_PORT, 400*1000);
@@ -54,14 +55,21 @@ int main()
     gpio_set_dir(15, GPIO_OUT);
 
     while (true) {
-        // turn both LEDs ON
-        gpio_put(15, 1);                 // Pico LED ON
-        setPin(ADDR, OLAT, 0b10000000); // MCP23008 GP7 ON
-        sleep_ms(500);
+        uint8_t value = readPin(ADDR, GPIO); // read to see if pins are high / low
+        if ((value & 0b1) == 1) {
+            printf("%d", value);
+            setPin(ADDR, OLAT, 0b00000000); // MCP23008 GP7 ON
+        }
+        else {
+            setPin(ADDR, OLAT, 0b10000000); // MCP23008 GP7 OFF
+            printf("%d", value);
+        }
 
-        // turn both LEDs OFF
-        gpio_put(15, 0);                 // Pico LED OFF
-        setPin(ADDR, OLAT, 0b00000000); // MCP23008 GP7 OFF
-        sleep_ms(500);
+        // // flash pico led
+        // gpio_put(15, 1);   // Pico LED ON
+        // sleep_ms(500);
+
+        // gpio_put(15, 0);   // Pico LED OFF
+        // sleep_ms(500);
     }
 }
