@@ -6,7 +6,7 @@
 #define SERVO_PIN 16
 
 void set_servo_angle(uint pin, float angle) {
-    // Map 0–180° → 650 (3.25% dc) –3000 (15% dc) µs
+    // Map 0–180° -> 650 (3.25% dc) –3000 (15% dc) µs
     float pulse = 650.0f + (angle / 180.0f) * 2350.0f;
 
     pwm_set_gpio_level(pin, (uint16_t)pulse);
