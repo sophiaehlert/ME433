@@ -42,7 +42,7 @@ pico_set_program_version(oled_display "0.1")
 
 # Modify the below lines to enable/disable output over UART/USB
 pico_enable_stdio_uart(oled_display 0)
-pico_enable_stdio_usb(oled_display 0)
+pico_enable_stdio_usb(oled_display 1)
 
 # Add the standard library to the build
 target_link_libraries(oled_display
