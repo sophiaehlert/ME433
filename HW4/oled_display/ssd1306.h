@@ -27,6 +27,7 @@ void ssd1306_setup(void);
 void ssd1306_update(void);
 void ssd1306_clear(void);
 void ssd1306_drawPixel(unsigned char x, unsigned char y, unsigned char color);
+void drawLetter(int x, int y, char c);
 
 /// this should be private
 void ssd1306_command(unsigned char c);

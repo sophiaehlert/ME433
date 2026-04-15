@@ -31,14 +31,18 @@ int main()
     gpio_set_dir(16, GPIO_OUT);
 
     while (true) {
-        ssd1306_drawPixel(0, 0, 1); // turn on top left pixel
+        // ssd1306_drawPixel(0, 0, 1); // turn on top left pixel
+        // ssd1306_update(); // update screen
+        // gpio_put(LEDPIN, 1); // turn on led
+        // sleep_ms(1000); // blink at 1Hz
+
+        // ssd1306_drawPixel(0, 0, 0); // turn off top left pixel
+        // ssd1306_update(); // update screen
+        // gpio_put(LEDPIN, 0); // turn off led
+        // sleep_ms(1000);
+        drawLetter(0, 0, 'a');
         ssd1306_update(); // update screen
-        gpio_put(LEDPIN, 1); // turn on led
         sleep_ms(1000); // blink at 1Hz
 
-        ssd1306_drawPixel(0, 0, 0); // turn off top left pixel
-        ssd1306_update(); // update screen
-        gpio_put(LEDPIN, 0); // turn off led
-        sleep_ms(1000);
     }
 }
