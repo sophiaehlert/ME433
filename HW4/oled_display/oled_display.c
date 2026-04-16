@@ -2,6 +2,7 @@
 #include "pico/stdlib.h"
 #include "hardware/i2c.h"
 #include "ssd1306.h"
+#include "hardware/adc.h"
 
 // I2C defines
 // I2C0 on GPIO14 (SDA) and GPIO15 (SCL) running at 400KHz
@@ -30,6 +31,13 @@ int main()
     gpio_init(16);
     gpio_set_dir(16, GPIO_OUT);
 
+    // ADC initialization
+    adc_init();
+    adc_gpio_init(27);   // ADC1 is on GPIO27
+    adc_select_input(1); // select ADC1
+
+    unsigned int t_prev = to_us_since_boot(get_absolute_time());
+
     while (true) {
         // // hearbeat code
         // ssd1306_drawPixel(0, 0, 1); // turn on top left pixel
@@ -49,7 +57,6 @@ int main()
 
         ssd1306_clear();
 
-        // int i = 15;
         char l1[50]; 
         sprintf(l1, "lorem ipsum dolor"); 
         drawMessage(0,0,l1); // draw starting at x=20,y=10
@@ -61,6 +68,21 @@ int main()
         char l3[50]; 
         sprintf(l3, "adipiscing elit, sed"); 
         drawMessage(0,16,l3); // draw starting at x=20,y=10
+
+        // read ADC1 and convert to volts
+        // 12-bit ADC: 0-4095 maps to 0-3.3V
+        uint16_t raw = adc_read();
+        float volts = raw * 3.3f / 4095.0f;
+
+        // calculate FPS
+        unsigned int t_now = to_us_since_boot(get_absolute_time());
+        unsigned int dt = t_now - t_prev;
+        float fps = 1000000.0f / dt;  // dt is in microseconds
+        t_prev = t_now;
+        // print fps
+        char l4[20];
+        sprintf(l4, "fps: %.1f, ADC: %.3f V", fps, volts);
+        drawMessage(0, 24, l4);
         
         ssd1306_update();
 
