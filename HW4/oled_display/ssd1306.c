@@ -119,3 +119,11 @@ void drawLetter(int x, int y, char c) {
         }
     }
 }
+
+void drawMessage(int x, int y, char* message) {
+    int i = 0;
+    while (message[i] != '\0') {
+        drawLetter(x + (i * 6), y, message[i]);
+        i++;
+    }
+}

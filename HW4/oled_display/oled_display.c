@@ -31,6 +31,7 @@ int main()
     gpio_set_dir(16, GPIO_OUT);
 
     while (true) {
+        // // hearbeat code
         // ssd1306_drawPixel(0, 0, 1); // turn on top left pixel
         // ssd1306_update(); // update screen
         // gpio_put(LEDPIN, 1); // turn on led
@@ -40,9 +41,28 @@ int main()
         // ssd1306_update(); // update screen
         // gpio_put(LEDPIN, 0); // turn off led
         // sleep_ms(1000);
-        drawLetter(0, 0, 'a');
-        ssd1306_update(); // update screen
-        sleep_ms(1000); // blink at 1Hz
+
+        // // draw a letter code
+        // drawLetter(0, 0, 'a');
+        // ssd1306_update(); // update screen
+        // sleep_ms(1000); // blink at 1Hz
+
+        ssd1306_clear();
+
+        // int i = 15;
+        char l1[50]; 
+        sprintf(l1, "lorem ipsum dolor"); 
+        drawMessage(0,0,l1); // draw starting at x=20,y=10
+        
+        char l2[50]; 
+        sprintf(l2, "sit amet, consectetur"); 
+        drawMessage(0,8,l2); // draw starting at x=20,y=10
+        
+        char l3[50]; 
+        sprintf(l3, "adipiscing elit, sed"); 
+        drawMessage(0,16,l3); // draw starting at x=20,y=10
+        
+        ssd1306_update();
 
     }
 }
