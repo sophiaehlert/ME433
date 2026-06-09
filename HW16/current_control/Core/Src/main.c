@@ -31,7 +31,13 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define ADC_MIN 350
+#define ADC_MAX 4050
 
+#define INA219_ADDR            0x40
+#define INA219_REG_CONFIG      0x00
+#define INA219_REG_CURRENT     0x04
+#define INA219_REG_CALIBRATION 0x05
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -61,7 +67,11 @@ static void MX_I2C2_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_TIM2_Init(void);
 /* USER CODE BEGIN PFP */
-
+uint32_t readADC(void);
+void init_ina219(void);
+void writeINA219(int reg, int value);
+signed short readINA219(unsigned char reg);
+float read_ina219(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -104,6 +114,7 @@ int main(void)
   MX_TIM2_Init();
 /* USER CODE BEGIN 2 */
   HAL_TIM_Base_Start_IT(&htim2);
+  init_ina219();
 /* USER CODE END 2 */
 
   /* Initialize leds */
@@ -438,12 +449,40 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     if (htim == &htim2) {
         static int counter = 0;
         counter++;
-        if (counter >= 100) {  // every 100ms = 10 times per second
+        if (counter >= 100) {
             counter = 0;
             uint32_t adc_val = readADC();
-            printf("ADC: %lu\r\n", adc_val);
+            signed short current = readINA219(INA219_REG_CURRENT);
+            printf("ADC: %lu, Current: %d\r\n", adc_val, current);
         }
     }
+}
+
+void writeINA219(int reg, int value) {
+    uint8_t buf[3];
+    buf[0] = reg;
+    buf[1] = value >> 8;
+    buf[2] = value & 0xff;
+    HAL_I2C_Master_Transmit(&hi2c2, INA219_ADDR << 1, buf, 3, 10);
+}
+
+signed short readINA219(unsigned char reg) {
+    HAL_I2C_Master_Transmit(&hi2c2, INA219_ADDR << 1, &reg, 1, 10);
+    uint8_t buffer[2];
+    HAL_I2C_Master_Receive(&hi2c2, INA219_ADDR << 1, buffer, 2, 10);
+    return (signed short)((buffer[0] << 8) | buffer[1]);
+}
+
+void init_ina219() {
+    unsigned short ina219_calValue = 1024;
+    unsigned short ina219_config = 0b0011000010001111;
+    writeINA219(INA219_REG_CALIBRATION, ina219_calValue);
+    writeINA219(INA219_REG_CONFIG, ina219_config);
+}
+
+float read_ina219() {
+    signed short value = readINA219(INA219_REG_CURRENT);
+    return value / 3.0f;
 }
 /* USER CODE END 4 */
 
