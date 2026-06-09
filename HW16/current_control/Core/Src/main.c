@@ -115,6 +115,12 @@ int main(void)
 /* USER CODE BEGIN 2 */
   HAL_TIM_Base_Start_IT(&htim2);
   init_ina219();
+
+  // set both channels high = motor off
+  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 2400);
+  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 2400);
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
 /* USER CODE END 2 */
 
   /* Initialize leds */
@@ -139,6 +145,30 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+
+      __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 100);
+      __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 2400);
+      HAL_Delay(500);
+
+      // // spin forward at 50% for 500ms
+      // __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 2400);
+      // __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 1200);
+      // HAL_Delay(500);
+
+      // // motor off (both high)
+      // __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 2400);
+      // __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 2400);
+      // HAL_Delay(200);
+
+      // // spin backward at 50% for 500ms
+      // __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 1200);
+      // __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 2400);
+      // HAL_Delay(500);
+
+      // // motor off (both high)
+      // __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 2400);
+      // __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 2400);
+      // HAL_Delay(200);
       /* USER CODE END WHILE */
 
       /* USER CODE BEGIN 3 */
