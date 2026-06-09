@@ -1,0 +1,8 @@
+{
+	"InstallScripts" : 
+	[
+		"/Users/sophiaehlert/Documents/GitHub/ME433/HW16/current_control/build/Debug/cmake_install.cmake",
+		"/Users/sophiaehlert/Documents/GitHub/ME433/HW16/current_control/build/Debug/cmake/stm32cubemx/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

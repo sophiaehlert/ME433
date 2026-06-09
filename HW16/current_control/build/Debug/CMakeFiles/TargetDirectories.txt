@@ -1,0 +1,6 @@
+/Users/sophiaehlert/Documents/GitHub/ME433/HW16/current_control/build/Debug/CMakeFiles/current_control.dir
+/Users/sophiaehlert/Documents/GitHub/ME433/HW16/current_control/build/Debug/CMakeFiles/edit_cache.dir
+/Users/sophiaehlert/Documents/GitHub/ME433/HW16/current_control/build/Debug/CMakeFiles/rebuild_cache.dir
+/Users/sophiaehlert/Documents/GitHub/ME433/HW16/current_control/build/Debug/cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir
+/Users/sophiaehlert/Documents/GitHub/ME433/HW16/current_control/build/Debug/cmake/stm32cubemx/CMakeFiles/edit_cache.dir
+/Users/sophiaehlert/Documents/GitHub/ME433/HW16/current_control/build/Debug/cmake/stm32cubemx/CMakeFiles/rebuild_cache.dir

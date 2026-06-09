@@ -21,7 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <stdio.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -50,7 +50,7 @@ TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim2;
 
 /* USER CODE BEGIN PV */
-
+volatile int state = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -102,9 +102,9 @@ int main(void)
   MX_I2C2_Init();
   MX_TIM1_Init();
   MX_TIM2_Init();
-  /* USER CODE BEGIN 2 */
-
-  /* USER CODE END 2 */
+/* USER CODE BEGIN 2 */
+  HAL_TIM_Base_Start_IT(&htim2);
+/* USER CODE END 2 */
 
   /* Initialize leds */
   BSP_LED_Init(LED_GREEN);
@@ -128,10 +128,9 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+      /* USER CODE END WHILE */
 
-    /* USER CODE END WHILE */
-
-    /* USER CODE BEGIN 3 */
+      /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
 }
@@ -422,7 +421,30 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+uint32_t readADC() {
+    uint32_t raw;
+    HAL_ADC_Start(&hadc1);
+    if (HAL_ADC_PollForConversion(&hadc1, 10) == HAL_OK) {
+        raw = HAL_ADC_GetValue(&hadc1);
+    } else {
+        raw = 0;
+    }
+    HAL_ADC_Stop(&hadc1);
+    return raw;
+}
 
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+    if (htim == &htim2) {
+        static int counter = 0;
+        counter++;
+        if (counter >= 100) {  // every 100ms = 10 times per second
+            counter = 0;
+            uint32_t adc_val = readADC();
+            printf("ADC: %lu\r\n", adc_val);
+        }
+    }
+}
 /* USER CODE END 4 */
 
 /**
