@@ -12,11 +12,4 @@
 /Users/sophiaehlert/Documents/GitHub/ME433/HW16/current_control/Drivers/BSP/STM32C0xx_Nucleo/stm32c0xx_nucleo.c:480:9:BSP_PB_GetState	16	static
 /Users/sophiaehlert/Documents/GitHub/ME433/HW16/current_control/Drivers/BSP/STM32C0xx_Nucleo/stm32c0xx_nucleo.c:490:6:BSP_PB_IRQHandler	16	static
 /Users/sophiaehlert/Documents/GitHub/ME433/HW16/current_control/Drivers/BSP/STM32C0xx_Nucleo/stm32c0xx_nucleo.c:500:13:BSP_PB_Callback	16	static
-/Users/sophiaehlert/Documents/GitHub/ME433/HW16/current_control/Drivers/BSP/STM32C0xx_Nucleo/stm32c0xx_nucleo.c:518:9:BSP_COM_Init	24	static
-/Users/sophiaehlert/Documents/GitHub/ME433/HW16/current_control/Drivers/BSP/STM32C0xx_Nucleo/stm32c0xx_nucleo.c:556:9:BSP_COM_DeInit	24	static
-/Users/sophiaehlert/Documents/GitHub/ME433/HW16/current_control/Drivers/BSP/STM32C0xx_Nucleo/stm32c0xx_nucleo.c:589:26:MX_USART2_Init	16	static
-/Users/sophiaehlert/Documents/GitHub/ME433/HW16/current_control/Drivers/BSP/STM32C0xx_Nucleo/stm32c0xx_nucleo.c:687:9:BSP_COM_SelectLogPort	16	static
-/Users/sophiaehlert/Documents/GitHub/ME433/HW16/current_control/Drivers/BSP/STM32C0xx_Nucleo/stm32c0xx_nucleo.c:715:1:__io_putchar	16	static
 /Users/sophiaehlert/Documents/GitHub/ME433/HW16/current_control/Drivers/BSP/STM32C0xx_Nucleo/stm32c0xx_nucleo.c:735:13:BUTTON_USER_EXTI_Callback	8	static
-/Users/sophiaehlert/Documents/GitHub/ME433/HW16/current_control/Drivers/BSP/STM32C0xx_Nucleo/stm32c0xx_nucleo.c:746:13:COM1_MspInit	56	static
-/Users/sophiaehlert/Documents/GitHub/ME433/HW16/current_control/Drivers/BSP/STM32C0xx_Nucleo/stm32c0xx_nucleo.c:780:13:COM1_MspDeInit	48	static

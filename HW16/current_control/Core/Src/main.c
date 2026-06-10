@@ -22,11 +22,16 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
+#include <math.h>
+#include <stdlib.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
+typedef enum {
+  STATE_IDLE,
+  STATE_ITEST
+} ControlState;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -38,6 +43,12 @@
 #define INA219_REG_CONFIG      0x00
 #define INA219_REG_CURRENT     0x04
 #define INA219_REG_CALIBRATION 0x05
+
+#define LOG_SIZE 400
+
+// control gains
+#define KP_CURRENT      -0.7f
+#define KI_CURRENT      0.5f
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -47,7 +58,6 @@
 
 /* Private variables ---------------------------------------------------------*/
 
-COM_InitTypeDef BspCOMInit;
 ADC_HandleTypeDef hadc1;
 
 I2C_HandleTypeDef hi2c2;
@@ -55,8 +65,20 @@ I2C_HandleTypeDef hi2c2;
 TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim2;
 
+UART_HandleTypeDef huart2;
+
 /* USER CODE BEGIN PV */
-volatile int state = 0;
+volatile int desired_current = 300;
+volatile float error_integral = 0;
+volatile int log_i = 0;
+
+// enum type
+volatile ControlState control_state = STATE_IDLE;
+
+// storage logs
+volatile int log_index[LOG_SIZE];
+volatile int log_desired[LOG_SIZE];
+volatile int log_actual[LOG_SIZE];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -66,17 +88,26 @@ static void MX_ADC1_Init(void);
 static void MX_I2C2_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_TIM2_Init(void);
+static void MX_USART2_UART_Init(void);
+
 /* USER CODE BEGIN PFP */
 uint32_t readADC(void);
 void init_ina219(void);
 void writeINA219(int reg, int value);
 signed short readINA219(unsigned char reg);
 float read_ina219(void);
+void motor_off(void);
+void motor_forward(int pwm);
+void motor_reverse(int pwm);
+void setPWM(int8_t duty_cycle);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+int __io_putchar(int ch) {
+  HAL_UART_Transmit(&huart2, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
+  return ch;
+}
 /* USER CODE END 0 */
 
 /**
@@ -104,6 +135,8 @@ int main(void)
 
   /* USER CODE BEGIN SysInit */
 
+BSP_LED_Init(LED_GREEN);
+BSP_LED_Init(LED_BLUE);
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
@@ -112,7 +145,9 @@ int main(void)
   MX_I2C2_Init();
   MX_TIM1_Init();
   MX_TIM2_Init();
-/* USER CODE BEGIN 2 */
+  MX_USART2_UART_Init();
+
+  /* USER CODE BEGIN 2 */
   HAL_TIM_Base_Start_IT(&htim2);
   init_ina219();
 
@@ -121,57 +156,125 @@ int main(void)
   __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 2400);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
-/* USER CODE END 2 */
+  /* USER CODE END 2 */
 
-  /* Initialize leds */
-  BSP_LED_Init(LED_GREEN);
-  BSP_LED_Init(LED_BLUE);
+    /* Initialize leds */
+  // BSP_LED_Init(LED_GREEN);
+  // BSP_LED_Init(LED_BLUE);
 
   /* Initialize USER push-button, will be used to trigger an interrupt each time it's pressed.*/
   BSP_PB_Init(BUTTON_USER, BUTTON_MODE_EXTI);
 
-  /* Initialize COM1 port (115200, 8 bits (7-bit data + 1 stop bit), no parity */
-  BspCOMInit.BaudRate   = 115200;
-  BspCOMInit.WordLength = COM_WORDLENGTH_8B;
-  BspCOMInit.StopBits   = COM_STOPBITS_1;
-  BspCOMInit.Parity     = COM_PARITY_NONE;
-  BspCOMInit.HwFlowCtl  = COM_HWCONTROL_NONE;
-  if (BSP_COM_Init(COM1, &BspCOMInit) != BSP_ERROR_NONE)
-  {
-    Error_Handler();
-  }
-
-  /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  // uint8_t rx_byte = 0;
+  
+  // while (1)
+  // {
+  //   // check if a character has been received via UART (Non-blocking check)
+  //   if (HAL_UART_Receive(&huart2, &rx_byte, 1, 10) == HAL_OK) 
+  //   {
+  //     if (rx_byte == 'a' && state == 0) 
+  //     {
+  //       // reset logging index and restore initial test condition
+  //       printf("Starting experiment...\r\n"); // debug
+  //       log_i = 0; 
+  //       desired_current = 300; 
+  //       integral = 0;
+        
+  //       // fire off the PI execution window in the 1kHz ISR
+  //       state = 1;
+        
+  //       // wait block until the 400 sample cycle finishes and resets state to 0
+  //       printf("Starting sample cycle...\r\n");
+  //       while(state == 1) 
+  //       {
+  //         BSP_LED_Toggle(LED_BLUE);
+  //         HAL_Delay(10);
+  //       }
+        
+  //       printf("printing data...\r\n");
+  //       // dump gathered logs out of RAM via Serial using integer formats
+  //       for (int i = 0; i < LOG_SIZE; i++) 
+  //       {
+  //         printf("%d %d %d\r\n", log_index[i], log_desired[i], log_actual[i]);
+  //       }
+  //     }
+  //   }
+
+  //   // Standard heartbeat indicator
+  //   BSP_LED_Toggle(LED_GREEN);
+  //   HAL_Delay(200);
+
+  //   // __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 100);
+  //   // __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 2400);
+  //   // HAL_Delay(500);
+
+  //   // // spin forward at 50% for 500ms
+  //   // __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 2400);
+  //   // __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 1200);
+  //   // HAL_Delay(500);
+
+  //   // // motor off (both high)
+  //   // __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 2400);
+  //   // __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 2400);
+  //   // HAL_Delay(200);
+
+  //   // // spin backward at 50% for 500ms
+  //   // __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 1200);
+  //   // __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 2400);
+  //   // HAL_Delay(500);
+
+  //   // // motor off (both high)
+  //   // __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 2400);
+  //   // __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 2400);
+  //   // HAL_Delay(200);
+    
+  uint8_t rx_byte = 0;
+  
   while (1)
   {
+    // check for incoming UART characters
+    if (HAL_UART_Receive(&huart2, &rx_byte, 1, 10) == HAL_OK) 
+    {
+      // trigger execution only if system is IDLE
+      if (rx_byte == 'a' && control_state == STATE_IDLE) 
+      {
+        log_i = 0; 
+        desired_current = 300; 
+        error_integral = 0;
+        
+        printf("Starting test...\r\n");
+        
+        // fire off the PI loop in the ISR
+        control_state = STATE_ITEST;
+      }
+    }
 
-      __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 100);
-      __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 2400);
-      HAL_Delay(500);
+    // Gated Data Dump: Triggers exactly once when the ISR switches control_state back to IDLE
+    if (control_state == STATE_IDLE && log_i == LOG_SIZE)
+    {
+        printf("Experiment complete. Printing data arrays:\r\n");
+        HAL_Delay(10); // Give the UART register room to clear
+        
+        for (int i = 0; i < LOG_SIZE; i++) 
+        {
+          printf("%d %d %d\r\n", log_index[i], log_desired[i], log_actual[i]);
+          
+          // CRITICAL: Prevent serial buffers from drowning
+          HAL_Delay(2); 
+        }
+        
+        printf("--- End of Transmission ---\r\n");
+        log_i = 0; // Reset index so it doesn't print again continuously
+    }
 
-      // // spin forward at 50% for 500ms
-      // __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 2400);
-      // __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 1200);
-      // HAL_Delay(500);
+    // Standard background heartbeat indicator
+    BSP_LED_Toggle(LED_GREEN);
+    HAL_Delay(200);
+    
+    /* USER CODE END WHILE */
 
-      // // motor off (both high)
-      // __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 2400);
-      // __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 2400);
-      // HAL_Delay(200);
-
-      // // spin backward at 50% for 500ms
-      // __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 1200);
-      // __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 2400);
-      // HAL_Delay(500);
-
-      // // motor off (both high)
-      // __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 2400);
-      // __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 2400);
-      // HAL_Delay(200);
-      /* USER CODE END WHILE */
-
-      /* USER CODE BEGIN 3 */
+    /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
 }
@@ -185,14 +288,14 @@ void SystemClock_Config(void)
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
-  __HAL_FLASH_SET_LATENCY(FLASH_LATENCY_0);
+  __HAL_FLASH_SET_LATENCY(FLASH_LATENCY_1);
 
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-  RCC_OscInitStruct.HSIDiv = RCC_HSI_DIV4;
+  RCC_OscInitStruct.HSIDiv = RCC_HSI_DIV1;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
@@ -208,7 +311,7 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.AHBCLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_APB1_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
   {
     Error_Handler();
   }
@@ -235,7 +338,7 @@ static void MX_ADC1_Init(void)
   /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
   */
   hadc1.Instance = ADC1;
-  hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV1;
+  hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV2;
   hadc1.Init.Resolution = ADC_RESOLUTION_12B;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
   hadc1.Init.ScanConvMode = ADC_SCAN_SEQ_FIXED;
@@ -287,7 +390,7 @@ static void MX_I2C2_Init(void)
 
   /* USER CODE END I2C2_Init 1 */
   hi2c2.Instance = I2C2;
-  hi2c2.Init.Timing = 0x00402D41;
+  hi2c2.Init.Timing = 0x10805D88;
   hi2c2.Init.OwnAddress1 = 0;
   hi2c2.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
   hi2c2.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
@@ -441,6 +544,42 @@ static void MX_TIM2_Init(void)
 }
 
 /**
+  * @brief USART2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART2_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART2_Init 0 */
+
+  /* USER CODE END USART2_Init 0 */
+
+  /* USER CODE BEGIN USART2_Init 1 */
+
+  /* USER CODE END USART2_Init 1 */
+  huart2.Instance = USART2;
+  huart2.Init.BaudRate = 115200;
+  huart2.Init.WordLength = UART_WORDLENGTH_8B;
+  huart2.Init.StopBits = UART_STOPBITS_1;
+  huart2.Init.Parity = UART_PARITY_NONE;
+  huart2.Init.Mode = UART_MODE_TX_RX;
+  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart2.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart2.Init.ClockPrescaler = UART_PRESCALER_DIV1;
+  huart2.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART2_Init 2 */
+
+  /* USER CODE END USART2_Init 2 */
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -466,9 +605,9 @@ uint32_t readADC() {
     uint32_t raw;
     HAL_ADC_Start(&hadc1);
     if (HAL_ADC_PollForConversion(&hadc1, 10) == HAL_OK) {
-        raw = HAL_ADC_GetValue(&hadc1);
+      raw = HAL_ADC_GetValue(&hadc1);
     } else {
-        raw = 0;
+      raw = 0;
     }
     HAL_ADC_Stop(&hadc1);
     return raw;
@@ -476,43 +615,125 @@ uint32_t readADC() {
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-    if (htim == &htim2) {
-        static int counter = 0;
-        counter++;
-        if (counter >= 100) {
-            counter = 0;
-            uint32_t adc_val = readADC();
-            signed short current = readINA219(INA219_REG_CURRENT);
-            printf("ADC: %lu, Current: %d\r\n", adc_val, current);
-        }
+  if (htim == &htim2)
+  {
+    static int counter = 0;
+
+    // state check
+    if (control_state == STATE_ITEST)
+    {
+      counter++;
+
+      // // safety check
+      // uint32_t adc = readADC();
+      // if(adc < ADC_MIN || adc > ADC_MAX)
+      // {
+      //   setPWM(0); // shut off motor
+      //   control_state = STATE_IDLE;
+      //   counter = 0;
+      //   error_integral = 0;
+      //   return;
+      // }
+
+      // read sensor
+      // signed short current = readINA219(INA219_REG_CURRENT);
+      signed short current = 120; // Fake 120mA sensor reading
+
+      // PI control loop math
+      float error = (float)desired_current - (float)current;
+      error_integral += error;
+
+      // anti-windup clamp (scaled for floating point current values)
+      if(error_integral > 200.0f)  error_integral = 200.0f;
+      if(error_integral < -200.0f) error_integral = -200.0f;
+
+      // calculate percentage output (-100 to 100)
+      float u = (KP_CURRENT * error) + (KI_CURRENT * error_integral);
+
+      // pass directly to driver helper
+      setPWM((int8_t)u);
+
+      // data logging
+      if(log_i < LOG_SIZE)
+      {
+        log_index[log_i]   = log_i;
+        log_desired[log_i] = desired_current;
+        log_actual[log_i]  = current;
+        log_i++;
+      }
+
+      // alternating square-wave setpoint adjustments every 100ms
+      if(counter % 100 == 0)
+        desired_current = -desired_current;
+
+      // test window finished (400 samples = 400ms)
+      if(counter >= 400)
+      {
+        setPWM(0); // turn off motor
+        control_state = STATE_IDLE; // signal main loop that data is ready
+        counter = 0;
+        error_integral = 0;
+      }
     }
+  }
 }
 
+// INA219 helper functions
 void writeINA219(int reg, int value) {
-    uint8_t buf[3];
-    buf[0] = reg;
-    buf[1] = value >> 8;
-    buf[2] = value & 0xff;
-    HAL_I2C_Master_Transmit(&hi2c2, INA219_ADDR << 1, buf, 3, 10);
+  uint8_t buf[3];
+  buf[0] = reg;
+  buf[1] = value >> 8;
+  buf[2] = value & 0xff;
+  HAL_I2C_Master_Transmit(&hi2c2, INA219_ADDR << 1, buf, 3, 10);
 }
 
 signed short readINA219(unsigned char reg) {
-    HAL_I2C_Master_Transmit(&hi2c2, INA219_ADDR << 1, &reg, 1, 10);
-    uint8_t buffer[2];
-    HAL_I2C_Master_Receive(&hi2c2, INA219_ADDR << 1, buffer, 2, 10);
-    return (signed short)((buffer[0] << 8) | buffer[1]);
+  HAL_I2C_Master_Transmit(&hi2c2, INA219_ADDR << 1, &reg, 1, 10);
+  uint8_t buffer[2];
+  HAL_I2C_Master_Receive(&hi2c2, INA219_ADDR << 1, buffer, 2, 10);
+  return (signed short)((buffer[0] << 8) | buffer[1]);
 }
 
 void init_ina219() {
-    unsigned short ina219_calValue = 1024;
-    unsigned short ina219_config = 0b0011000010001111;
-    writeINA219(INA219_REG_CALIBRATION, ina219_calValue);
-    writeINA219(INA219_REG_CONFIG, ina219_config);
+  unsigned short ina219_calValue = 1024;
+  unsigned short ina219_config = 0b0011000010001111;
+  writeINA219(INA219_REG_CALIBRATION, ina219_calValue);
+  writeINA219(INA219_REG_CONFIG, ina219_config);
 }
 
 float read_ina219() {
-    signed short value = readINA219(INA219_REG_CURRENT);
-    return value / 3.0f;
+  signed short value = readINA219(INA219_REG_CURRENT);
+  return value / 3.0f;
+}
+void setPWM(int8_t duty_cycle);
+// pwm function
+void setPWM(int8_t duty_cycle)
+{
+    if (duty_cycle > 100)  duty_cycle = 100;
+    if (duty_cycle < -100) duty_cycle = -100;
+
+    // calculate pull-down depth based on 2400 timer period
+    uint32_t pull_down_depth = (uint32_t)((abs(duty_cycle) * 2400) / 100);
+    uint32_t active_compare  = 2400 - pull_down_depth;
+
+    if (duty_cycle > 0)
+    {
+        // forward
+        __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 2400);
+        __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, active_compare);
+    }
+    else if (duty_cycle < 0)
+    {
+        // reverse
+        __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, active_compare);
+        __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 2400);
+    }
+    else
+    {
+        // off (Brake) - both channels held high
+        __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 2400);
+        __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 2400);
+    }
 }
 /* USER CODE END 4 */
 
@@ -530,6 +751,7 @@ void Error_Handler(void)
   }
   /* USER CODE END Error_Handler_Debug */
 }
+
 #ifdef USE_FULL_ASSERT
 /**
   * @brief  Reports the name of the source file and the source line number
