@@ -69,6 +69,17 @@ static uint32_t BufferCmp8b(const uint8_t *pBuffer1, const uint8_t *pBuffer2, ui
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+#ifdef __GNUC__
+  #define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
+#else
+  #define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
+#endif /* __GNUC__ */
+
+PUTCHAR_PROTOTYPE {
+  // Uses the BSP COM1 port you initialized in main()
+  HAL_UART_Transmit(&COM_UartHandle[COM1], (uint8_t *)&ch, 1, HAL_MAX_DELAY);
+  return ch;
+}
 /* USER CODE END 0 */
 
 /**

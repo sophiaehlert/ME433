@@ -1,10 +1,17 @@
-13:32:40 **** Incremental Build of configuration Debug for project STM32CubeIDE ****
+13:45:10 **** Incremental Build of configuration Debug for project STM32CubeIDE ****
 make -j11 all 
+arm-none-eabi-gcc "/Users/sophiaehlert/Documents/GitHub/ME433/HW12/FDCAN_Com_Polling/Src/main.c" -mcpu=cortex-m0plus -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32C092xx -DUSE_NUCLEO_64 -c -I../../Inc -I../../Drivers/STM32C0xx_HAL_Driver/Inc -I../../Drivers/STM32C0xx_HAL_Driver/Inc/Legacy -I../../Drivers/CMSIS/Device/ST/STM32C0xx/Include -I../../Drivers/CMSIS/Include -I../../Drivers/BSP/STM32C0xx_Nucleo -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Application/User/main.d" -MT"Application/User/main.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "Application/User/main.o"
+arm-none-eabi-gcc -o "STM32CubeIDE.elf" @"objects.list"   -mcpu=cortex-m0plus -T"/Users/sophiaehlert/Documents/GitHub/ME433/HW12/FDCAN_Com_Polling/STM32CubeIDE/STM32C092RCTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="STM32CubeIDE.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: STM32CubeIDE.elf
+ 
 arm-none-eabi-size  STM32CubeIDE.elf 
+arm-none-eabi-objdump -h -S STM32CubeIDE.elf  > "STM32CubeIDE.list"
    text	   data	    bss	    dec	    hex	filename
-  12140	     36	   1940	  14116	   3724	STM32CubeIDE.elf
+  16992	    128	   2280	  19400	   4bc8	STM32CubeIDE.elf
 Finished building: default.size.stdout
  
+Finished building: STM32CubeIDE.list
+ 
 
-13:32:40 Build Finished. 0 errors, 0 warnings. (took 85ms)
+13:45:10 Build Finished. 0 errors, 0 warnings. (took 468ms)
 

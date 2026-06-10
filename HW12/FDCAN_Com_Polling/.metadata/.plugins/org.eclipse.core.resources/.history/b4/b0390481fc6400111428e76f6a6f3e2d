@@ -69,6 +69,13 @@ static uint32_t BufferCmp8b(const uint8_t *pBuffer1, const uint8_t *pBuffer2, ui
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+// Tell the compiler that this array exists in the BSP files
+extern UART_HandleTypeDef COM_UartHandle[];
+
+int __io_putchar(int ch) {
+  HAL_UART_Transmit(&COM_UartHandle[COM1], (uint8_t *)&ch, 1, HAL_MAX_DELAY);
+  return ch;
+}
 /* USER CODE END 0 */
 
 /**

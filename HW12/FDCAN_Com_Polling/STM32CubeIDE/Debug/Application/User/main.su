@@ -1,7 +1,7 @@
-/Users/sophiaehlert/Documents/GitHub/ME433/HW12/FDCAN_Com_Polling/Src/main.c:79:5:main	40	static
-/Users/sophiaehlert/Documents/GitHub/ME433/HW12/FDCAN_Com_Polling/Src/main.c:232:6:SystemClock_Config	64	static
-/Users/sophiaehlert/Documents/GitHub/ME433/HW12/FDCAN_Com_Polling/Src/main.c:271:13:MX_FDCAN1_Init	8	static
-/Users/sophiaehlert/Documents/GitHub/ME433/HW12/FDCAN_Com_Polling/Src/main.c:314:13:MX_GPIO_Init	16	static
-/Users/sophiaehlert/Documents/GitHub/ME433/HW12/FDCAN_Com_Polling/Src/main.c:333:6:BSP_PB_Callback	16	static
-/Users/sophiaehlert/Documents/GitHub/ME433/HW12/FDCAN_Com_Polling/Src/main.c:359:17:BufferCmp8b	24	static
-/Users/sophiaehlert/Documents/GitHub/ME433/HW12/FDCAN_Com_Polling/Src/main.c:379:6:Error_Handler	8	static
+/Users/sophiaehlert/Documents/GitHub/ME433/HW12/FDCAN_Com_Polling/Src/main.c:78:5:main	48	static
+/Users/sophiaehlert/Documents/GitHub/ME433/HW12/FDCAN_Com_Polling/Src/main.c:240:6:SystemClock_Config	64	static
+/Users/sophiaehlert/Documents/GitHub/ME433/HW12/FDCAN_Com_Polling/Src/main.c:279:13:MX_FDCAN1_Init	8	static
+/Users/sophiaehlert/Documents/GitHub/ME433/HW12/FDCAN_Com_Polling/Src/main.c:322:13:MX_GPIO_Init	16	static
+/Users/sophiaehlert/Documents/GitHub/ME433/HW12/FDCAN_Com_Polling/Src/main.c:341:6:BSP_PB_Callback	16	static
+/Users/sophiaehlert/Documents/GitHub/ME433/HW12/FDCAN_Com_Polling/Src/main.c:370:17:BufferCmp8b	24	static
+/Users/sophiaehlert/Documents/GitHub/ME433/HW12/FDCAN_Com_Polling/Src/main.c:390:6:Error_Handler	8	static
